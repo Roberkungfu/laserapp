@@ -13,263 +13,70 @@
 <link rel="apple-touch-icon" href="icon-192.svg">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #0e0f11;
-    --surface: #16181c;
-    --surface2: #1e2128;
-    --border: rgba(255,255,255,0.08);
-    --text: #f0f0f0;
-    --muted: #777;
-    --accent: #e63946;
-    --green: #22c55e;
+    --bg: #0e0f11; --surface: #16181c; --surface2: #1e2128;
+    --border: rgba(255,255,255,0.08); --text: #f0f0f0; --muted: #777;
+    --accent: #e63946; --green: #22c55e;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--text);
-    font-family: system-ui, -apple-system, sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-  }
-
-  /* ── Layout: cámara arriba, panel abajo ── */
-  #app {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
-  }
-
-  /* ── Header ── */
-  .hdr {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    background: var(--bg);
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  .dot {
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: var(--accent);
-  }
-
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+  #app { display: flex; flex-direction: column; height: 100%; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+  .hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg); }
+  .logo { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
   .dot.pulse { animation: pulse 1.4s ease-in-out infinite; }
-
-  @keyframes pulse {
-    0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(230,57,70,0.4); }
-    50%      { opacity:0.7; box-shadow: 0 0 0 5px rgba(230,57,70,0); }
-  }
-
-  .pill {
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    background: var(--surface2);
-    color: var(--muted);
-    border: 1px solid var(--border);
-    display: flex; align-items: center; gap: 5px;
-  }
-
+  @keyframes pulse { 0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(230,57,70,0.4); } 50% { opacity:0.7; box-shadow: 0 0 0 5px rgba(230,57,70,0); } }
+  .pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
   .pill.on { color: var(--green); border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.07); }
   .pip { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-
-  /* ── Video ── */
-  .video-wrap {
-    position: relative;
-    flex: 1;
-    background: #000;
-    overflow: hidden;
-    min-height: 0;
-  }
-
-  #videoEl {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  #overlayCanvas {
-    position: absolute; top:0; left:0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-  }
-
+  .video-wrap { position: relative; flex: 1; background: #000; overflow: hidden; min-height: 0; }
+  #videoEl { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #overlayCanvas { position: absolute; top:0; left:0; width: 100%; height: 100%; pointer-events: none; }
   #hiddenCanvas { display: none; }
-
-  .no-cam-msg {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 10px; color: var(--muted); font-size: 13px;
-  }
-
-  /* Botón flotante sobre el video */
-  .fab-row {
-    position: absolute;
-    bottom: 12px; right: 12px;
-    display: flex; flex-direction: column; gap: 8px;
-    align-items: flex-end;
-  }
-
-  .fab {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    border: none;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    font-size: 18px;
-    transition: transform 0.15s, opacity 0.15s;
-  }
-
+  .no-cam-msg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--muted); font-size: 13px; }
+  .fab-row { position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .fab { width: 44px; height: 44px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: transform 0.15s; }
   .fab:active { transform: scale(0.92); }
   .fab-clear { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-
-  /* ── Panel inferior ── */
-  .panel {
-    flex-shrink: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-  }
-
-  /* Stats row */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .stat {
-    padding: 10px 12px;
-    display: flex; flex-direction: column; gap: 2px;
-    border-right: 1px solid var(--border);
-  }
-
+  .panel { flex-shrink: 0; background: var(--surface); border-top: 1px solid var(--border); }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--border); }
+  .stat { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); }
   .stat:last-child { border-right: none; }
   .stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .stat-val { font-size: 20px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
   .stat-sub { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  /* Sliders */
-  .sliders {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .sl-block {
-    padding: 8px 12px;
-    border-right: 1px solid var(--border);
-  }
-
+  .sliders { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+  .sl-block { padding: 8px 12px; border-right: 1px solid var(--border); }
   .sl-block:last-child { border-right: none; }
-
-  .sl-lbl {
-    display: flex; justify-content: space-between;
-    font-size: 11px; color: var(--muted); margin-bottom: 5px;
-  }
-
+  .sl-lbl { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
   .sl-lbl span:last-child { color: var(--text); font-weight: 500; }
-
-  input[type=range] {
-    width: 100%;
-    -webkit-appearance: none;
-    height: 3px;
-    border-radius: 2px;
-    background: var(--surface2);
-    outline: none;
-  }
-
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: 2px solid var(--bg);
-  }
-
-  /* Shots list */
-  .shots-wrap {
-    max-height: 100px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
+  input[type=range] { width: 100%; -webkit-appearance: none; height: 3px; border-radius: 2px; background: var(--surface2); outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+  .shots-wrap { max-height: 100px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .shots-wrap::-webkit-scrollbar { display: none; }
-
-  .shot-row {
-    display: flex;
-    align-items: center;
-    padding: 6px 12px;
-    border-bottom: 1px solid var(--border);
-    gap: 8px;
-    font-size: 12px;
-  }
-
+  .shot-row { display: flex; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border); gap: 8px; font-size: 12px; }
   .shot-row:last-child { border-bottom: none; }
   .sn { color: var(--accent); font-weight: 700; min-width: 26px; font-variant-numeric: tabular-nums; }
   .sxy { color: var(--text); flex: 1; font-variant-numeric: tabular-nums; }
   .st { color: var(--muted); font-size: 11px; }
-
   .empty { text-align: center; color: var(--muted); font-size: 12px; padding: 14px; }
-
-  /* CTA button */
-  .btn-main {
-    width: 100%;
-    padding: 14px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: background 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
+  .btn-main { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
   .btn-main:active { background: #c1121f; }
   .btn-main.stop { background: var(--surface2); color: var(--muted); }
-  .btn-main.stop:active { background: #2a2d35; }
 </style>
 </head>
 <body>
-
 <div id="app">
   <header class="hdr">
-    <div class="logo">
-      <div class="dot" id="dot"></div>
-      LaserTrack
-    </div>
-    <div class="pill" id="pill">
-      <span class="pip"></span>
-      <span id="pillTxt">Sin cámara</span>
-    </div>
+    <div class="logo"><div class="dot" id="dot"></div> LaserTrack</div>
+    <div class="pill" id="pill"><span class="pip"></span><span id="pillTxt">Sin cámara</span></div>
   </header>
 
   <div class="video-wrap" id="videoWrap">
     <video id="videoEl" autoplay playsinline muted></video>
     <canvas id="overlayCanvas"></canvas>
     <canvas id="hiddenCanvas"></canvas>
-
     <div class="no-cam-msg" id="noCam">
       <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2" opacity="0.4">
         <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>
@@ -280,9 +87,9 @@
       </svg>
       Toca "Activar" para comenzar
     </div>
-
     <div class="fab-row">
-      <button class="fab fab-clear" id="btnClear" title="Limpiar impactos">
+      <button class="fab fab-clear" id="btnDebug" title="Debug" style="font-size:12px;font-family:monospace;font-weight:700;">DBG</button>
+      <button class="fab fab-clear" id="btnClear" title="Limpiar">
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16"/>
         </svg>
@@ -292,131 +99,85 @@
 
   <div class="panel">
     <div class="stats-row">
-      <div class="stat">
-        <span class="stat-lbl">Disparos</span>
-        <span class="stat-val" id="shotCount">0</span>
-        <span class="stat-sub">detectados</span>
-      </div>
-      <div class="stat">
-        <span class="stat-lbl">Último X</span>
-        <span class="stat-val" id="lastX">—</span>
-        <span class="stat-sub" id="lastY">Y: —</span>
-      </div>
-      <div class="stat">
-        <span class="stat-lbl">Hora</span>
-        <span class="stat-val" style="font-size:13px;padding-top:4px;" id="lastT">—</span>
-        <span class="stat-sub">último impacto</span>
-      </div>
+      <div class="stat"><span class="stat-lbl">Disparos</span><span class="stat-val" id="shotCount">0</span><span class="stat-sub">detectados</span></div>
+      <div class="stat"><span class="stat-lbl">Último X</span><span class="stat-val" id="lastX">—</span><span class="stat-sub" id="lastY">Y: —</span></div>
+      <div class="stat"><span class="stat-lbl">Hora</span><span class="stat-val" style="font-size:13px;padding-top:4px;" id="lastT">—</span><span class="stat-sub">último impacto</span></div>
     </div>
-
     <div class="sliders">
-      <div class="sl-block">
-        <div class="sl-lbl"><span>Sensibilidad</span><span id="sensVal">40</span></div>
-        <input type="range" id="sensSlider" min="10" max="80" value="40" step="1">
-      </div>
-      <div class="sl-block">
-        <div class="sl-lbl"><span>Cooldown ms</span><span id="cdVal">800</span></div>
-        <input type="range" id="cdSlider" min="200" max="2000" value="800" step="100">
-      </div>
+      <div class="sl-block"><div class="sl-lbl"><span>Sensibilidad</span><span id="sensVal">40</span></div><input type="range" id="sensSlider" min="10" max="80" value="40" step="1"></div>
+      <div class="sl-block"><div class="sl-lbl"><span>Cooldown ms</span><span id="cdVal">800</span></div><input type="range" id="cdSlider" min="200" max="2000" value="800" step="100"></div>
     </div>
-
-    <div class="shots-wrap" id="shotsWrap">
-      <div class="empty" id="emptyMsg">Sin impactos aún</div>
-    </div>
-
+    <div class="shots-wrap" id="shotsWrap"><div class="empty" id="emptyMsg">Sin impactos aún</div></div>
     <button class="btn-main" id="btnStart">
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-        <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>
-      </svg>
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
       Activar cámara
     </button>
   </div>
 </div>
 
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-const videoEl   = document.getElementById('videoEl');
-const overlay   = document.getElementById('overlayCanvas');
-const hidden    = document.getElementById('hiddenCanvas');
-const ctx       = overlay.getContext('2d');
-const hCtx      = hidden.getContext('2d');
-const btnStart  = document.getElementById('btnStart');
-const btnClear  = document.getElementById('btnClear');
-const pill      = document.getElementById('pill');
-const pillTxt   = document.getElementById('pillTxt');
-const dot       = document.getElementById('dot');
-const noCam     = document.getElementById('noCam');
-const shotCount = document.getElementById('shotCount');
-const lastX     = document.getElementById('lastX');
-const lastY     = document.getElementById('lastY');
-const lastT     = document.getElementById('lastT');
-const shotsWrap = document.getElementById('shotsWrap');
-const emptyMsg  = document.getElementById('emptyMsg');
-const sensSlider= document.getElementById('sensSlider');
-const sensVal   = document.getElementById('sensVal');
-const cdSlider  = document.getElementById('cdSlider');
-const cdVal     = document.getElementById('cdVal');
-const videoWrap = document.getElementById('videoWrap');
+const videoEl=document.getElementById('videoEl'), overlay=document.getElementById('overlayCanvas'),
+  hidden=document.getElementById('hiddenCanvas'), ctx=overlay.getContext('2d'), hCtx=hidden.getContext('2d'),
+  btnStart=document.getElementById('btnStart'), btnClear=document.getElementById('btnClear'),
+  btnDebug=document.getElementById('btnDebug'), pill=document.getElementById('pill'),
+  pillTxt=document.getElementById('pillTxt'), dot=document.getElementById('dot'),
+  noCam=document.getElementById('noCam'), shotCount=document.getElementById('shotCount'),
+  lastX=document.getElementById('lastX'), lastY=document.getElementById('lastY'),
+  lastT=document.getElementById('lastT'), shotsWrap=document.getElementById('shotsWrap'),
+  sensSlider=document.getElementById('sensSlider'), sensVal=document.getElementById('sensVal'),
+  cdSlider=document.getElementById('cdSlider'), cdVal=document.getElementById('cdVal'),
+  videoWrap=document.getElementById('videoWrap');
 
-let streaming = false, shots = [], lastShotTime = 0, animId = null;
+let streaming=false, shots=[], lastShotTime=0, animId=null, debugMode=false;
 
 sensSlider.oninput = () => sensVal.textContent = sensSlider.value;
 cdSlider.oninput   = () => cdVal.textContent   = cdSlider.value;
 
+btnDebug.onclick = () => {
+  debugMode = !debugMode;
+  btnDebug.style.color = debugMode ? '#22c55e' : '';
+  btnDebug.style.borderColor = debugMode ? 'rgba(34,197,94,0.4)' : '';
+};
+
+async function startCamera() {
+  const constraints = [
+    { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+    { video: { facingMode: 'environment' } },
+    { video: true }
+  ];
+  for (const c of constraints) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(c);
+      videoEl.srcObject = stream;
+      return new Promise(res => { videoEl.onloadedmetadata = () => res(true); });
+    } catch(e) {}
+  }
+  return false;
+}
+
 btnStart.onclick = async () => {
   if (streaming) { stopCamera(); return; }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
-    videoEl.srcObject = stream;
-    videoEl.onloadedmetadata = () => {
-      hidden.width  = videoEl.videoWidth;
-      hidden.height = videoEl.videoHeight;
-      resizeOverlay();
-      streaming = true;
-      noCam.style.display = 'none';
-      pillTxt.textContent = 'Detectando';
-      pill.className = 'pill on';
-      dot.className = 'dot pulse';
-      btnStart.className = 'btn-main stop';
-      btnStart.innerHTML = `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Detener`;
-      loop();
-    };
-  } catch(e) {
-    // Fallback: cámara trasera sin "exact" (algunos dispositivos)
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      videoEl.srcObject = stream;
-      videoEl.onloadedmetadata = () => {
-        hidden.width  = videoEl.videoWidth;
-        hidden.height = videoEl.videoHeight;
-        resizeOverlay();
-        streaming = true;
-        noCam.style.display = 'none';
-        pillTxt.textContent = 'Detectando';
-        pill.className = 'pill on';
-        dot.className = 'dot pulse';
-        btnStart.className = 'btn-main stop';
-        btnStart.innerHTML = `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Detener`;
-        loop();
-      };
-    } catch(e2) {
-      alert('No se pudo acceder a la cámara trasera. Verifica los permisos en el navegador.');
-    }
-  }
+  const ok = await startCamera();
+  if (!ok) { alert('No se pudo acceder a la cámara. Verifica los permisos.'); return; }
+  hidden.width = videoEl.videoWidth;
+  hidden.height = videoEl.videoHeight;
+  resizeOverlay();
+  streaming = true;
+  noCam.style.display = 'none';
+  pillTxt.textContent = 'Detectando';
+  pill.className = 'pill on';
+  dot.className = 'dot pulse';
+  btnStart.className = 'btn-main stop';
+  btnStart.innerHTML = '<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Detener';
+  loop();
 };
 
 btnClear.onclick = () => {
   shots = [];
-  shotCount.textContent = '0';
-  lastX.textContent = '—';
-  lastY.textContent = 'Y: —';
-  lastT.textContent = '—';
-  shotsWrap.innerHTML = '<div class="empty" id="emptyMsg">Sin impactos aún</div>';
+  shotCount.textContent='0'; lastX.textContent='—'; lastY.textContent='Y: —'; lastT.textContent='—';
+  shotsWrap.innerHTML='<div class="empty" id="emptyMsg">Sin impactos aún</div>';
   drawOverlay();
 };
 
@@ -427,100 +188,107 @@ function stopCamera() {
   if (s) s.getTracks().forEach(t => t.stop());
   videoEl.srcObject = null;
   noCam.style.display = 'flex';
-  pillTxt.textContent = 'Sin cámara';
-  pill.className = 'pill';
-  dot.className = 'dot';
+  pillTxt.textContent = 'Sin cámara'; pill.className = 'pill'; dot.className = 'dot';
   btnStart.className = 'btn-main';
-  btnStart.innerHTML = `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg> Activar cámara`;
+  btnStart.innerHTML = '<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg> Activar cámara';
 }
 
-function resizeOverlay() {
-  overlay.width  = videoWrap.offsetWidth;
-  overlay.height = videoWrap.offsetHeight;
-}
-
+function resizeOverlay() { overlay.width=videoWrap.offsetWidth; overlay.height=videoWrap.offsetHeight; }
 window.addEventListener('resize', () => { if (streaming) resizeOverlay(); });
-screen.orientation && screen.orientation.addEventListener('change', () => { setTimeout(() => { if (streaming) resizeOverlay(); }, 200); });
+screen.orientation && screen.orientation.addEventListener('change', () => { setTimeout(()=>{ if(streaming) resizeOverlay(); }, 200); });
 
 function detectLaser() {
-  const w = hidden.width, h = hidden.height;
+  const w=hidden.width, h=hidden.height;
   hCtx.drawImage(videoEl, 0, 0, w, h);
   const data = hCtx.getImageData(0, 0, w, h).data;
-  const threshold = 255 - parseInt(sensSlider.value);
+  const sens = parseInt(sensSlider.value);
+  const minScore = Math.max(5, 120 - sens * 1.4);
 
-  let maxScore = 0, bx = -1, by = -1;
-  for (let y = 0; y < h; y += 3) {
-    for (let x = 0; x < w; x += 3) {
-      const i = (y * w + x) * 4;
-      const r = data[i], g = data[i+1], b = data[i+2];
-      if (r > 180 && g < 90 && b < 90) {
-        const score = r - Math.max(g, b);
-        if (score > maxScore) { maxScore = score; bx = x; by = y; }
+  let maxScore=0, bx=-1, by=-1, dbgR=0, dbgG=0, dbgB=0;
+
+  for (let y=0; y<h; y+=2) {
+    for (let x=0; x<w; x+=2) {
+      const i=(y*w+x)*4;
+      const r=data[i], g=data[i+1], b=data[i+2];
+      const redDom   = r>100 && r>g*1.3 && r>b*1.3;
+      const bright   = r>220 && g>180 && b>180;
+      const redBright= r>200 && g<160 && b<160;
+      if (redDom || bright || redBright) {
+        const score = bright ? (r+g+b)/3 : r - Math.max(g,b) + (r/255)*50;
+        if (score > maxScore) { maxScore=score; bx=x; by=y; dbgR=r; dbgG=g; dbgB=b; }
       }
     }
   }
 
-  if (maxScore > threshold && bx >= 0) {
+  if (debugMode) drawDebug(bx, by, dbgR, dbgG, dbgB, maxScore, minScore);
+
+  if (maxScore > minScore && bx >= 0) {
     const now = Date.now();
     if (now - lastShotTime > parseInt(cdSlider.value)) {
       lastShotTime = now;
-      registerShot(bx / w, by / h);
+      registerShot(bx/w, by/h);
     }
   }
 }
 
+function drawDebug(bx, by, r, g, b, score, minScore) {
+  const cw=overlay.width, ch=overlay.height, w=hidden.width, h=hidden.height;
+  if (bx >= 0) {
+    const px=(bx/w)*cw, py=(by/h)*ch;
+    const color = score>minScore ? '#22c55e' : '#facc15';
+    ctx.beginPath(); ctx.arc(px, py, 12, 0, Math.PI*2);
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(px-16,py); ctx.lineTo(px+16,py);
+    ctx.moveTo(px,py-16); ctx.lineTo(px,py+16);
+    ctx.strokeStyle=color; ctx.lineWidth=1; ctx.stroke();
+  }
+  ctx.fillStyle='rgba(0,0,0,0.65)';
+  ctx.roundRect(8,8,220,80,6); ctx.fill();
+  ctx.font='12px monospace';
+  ctx.fillStyle='#f0f0f0';
+  ctx.fillText(`RGB: ${r} / ${g} / ${b}`, 16, 30);
+  ctx.fillStyle = score>minScore ? '#22c55e' : '#facc15';
+  ctx.fillText(`Score: ${Math.round(score)}  min: ${Math.round(minScore)}`, 16, 50);
+  ctx.fillStyle = score>minScore ? '#22c55e' : '#aaa';
+  ctx.fillText(score>minScore ? '● DETECTADO' : '○ buscando...', 16, 70);
+}
+
 function registerShot(px, py) {
-  const shot = { px, py, t: new Date() };
+  const shot={px, py, t:new Date()};
   shots.push(shot);
-  const n = shots.length;
-  const xp = Math.round(px * 100), yp = Math.round(py * 100);
-
-  shotCount.textContent = n;
-  lastX.textContent = xp + '%';
-  lastY.textContent = 'Y: ' + yp + '%';
-  lastT.textContent = shot.t.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-
-  const empty = document.getElementById('emptyMsg');
-  if (empty) empty.remove();
-
-  const row = document.createElement('div');
-  row.className = 'shot-row';
-  row.innerHTML = `<span class="sn">#${n}</span><span class="sxy">X:${xp}% · Y:${yp}%</span><span class="st">${shot.t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>`;
+  const n=shots.length, xp=Math.round(px*100), yp=Math.round(py*100);
+  shotCount.textContent=n; lastX.textContent=xp+'%'; lastY.textContent='Y: '+yp+'%';
+  lastT.textContent=shot.t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const empty=document.getElementById('emptyMsg'); if(empty) empty.remove();
+  const row=document.createElement('div'); row.className='shot-row';
+  row.innerHTML=`<span class="sn">#${n}</span><span class="sxy">X:${xp}% · Y:${yp}%</span><span class="st">${shot.t.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>`;
   shotsWrap.prepend(row);
 }
 
 function drawOverlay() {
-  const cw = overlay.width, ch = overlay.height;
-  ctx.clearRect(0, 0, cw, ch);
-  shots.forEach((s, idx) => {
-    const x = s.px * cw, y = s.py * ch;
-    const age = shots.length - 1 - idx;
-    const alpha = Math.max(0.2, 1 - age * 0.1);
-
-    ctx.beginPath();
-    ctx.arc(x, y, 16, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(230,57,70,${alpha * 0.5})`;
-    ctx.lineWidth = 1.5; ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(x, y, 6, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(230,57,70,${alpha})`; ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${alpha})`; ctx.fill();
-
-    ctx.font = `500 11px system-ui`;
-    ctx.fillStyle = `rgba(255,255,255,${alpha * 0.85})`;
-    ctx.fillText(`#${idx + 1}`, x + 20, y + 4);
+  const cw=overlay.width, ch=overlay.height;
+  ctx.clearRect(0,0,cw,ch);
+  shots.forEach((s,idx) => {
+    const x=s.px*cw, y=s.py*ch, age=shots.length-1-idx;
+    const alpha=Math.max(0.2, 1-age*0.1);
+    ctx.beginPath(); ctx.arc(x,y,16,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(230,57,70,${alpha*0.5})`; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2);
+    ctx.fillStyle=`rgba(230,57,70,${alpha})`; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${alpha})`; ctx.fill();
+    ctx.font='500 11px system-ui';
+    ctx.fillStyle=`rgba(255,255,255,${alpha*0.85})`;
+    ctx.fillText(`#${idx+1}`, x+20, y+4);
   });
 }
 
 function loop() {
   if (!streaming) return;
   if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
-    detectLaser();
     drawOverlay();
+    detectLaser();
   }
   animId = requestAnimationFrame(loop);
 }
