@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///Users/robertorojas/Downloads/index_3.html -->
+<!-- saved from url=(0049)file:///Users/robertorojas/Downloads/index_4.html -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -252,7 +252,7 @@ function initTouchCam(){
     e.preventDefault();
     const dx=e.touches[0].clientX-lastTX;
     const dy=e.touches[0].clientY-lastTY;
-    camX-=dx*1.8;camY-=dy*1.8;
+    camX+=dx*1.8;camY+=dy*1.8;
     lastTX=e.touches[0].clientX;lastTY=e.touches[0].clientY;
     gyroBadge.textContent=`${Math.round(camX)},${Math.round(camY)}`;
   },{passive:false});
@@ -285,8 +285,9 @@ function randomTarget(){
 function spawnTarget(){targets.push(randomTarget());}
 
 // Convierte worldX/Y → screenX/Y según posición de cámara
+// camX/camY = cuánto se movió la cámara → targets se desplazan igual
 function toScreen(wx,wy){
-  return{sx:W/2+wx-camX, sy:H/2+wy-camY};
+  return{sx:W/2+wx+camX, sy:H/2+wy+camY};
 }
 
 // ── Helpers color ───────────────────────────────────────────────
@@ -616,7 +617,7 @@ function shoot(){
   } else {
     const mx=W/2+(Math.random()-0.5)*60,my=H/2+(Math.random()-0.5)*60;
     // Convertir screen miss → world
-    spawnBullet(mx,my,mx-W/2+camX,my-H/2+camY);
+    spawnBullet(mx,my,mx-W/2-camX,my-H/2-camY);
   }
 }
 
