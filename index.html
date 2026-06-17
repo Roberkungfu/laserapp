@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0050)file:///Users/robertorojas/Downloads/index_10.html -->
+<!-- saved from url=(0050)file:///Users/robertorojas/Downloads/index_11.html -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -37,8 +37,8 @@ input[type=range].sens-slider::-webkit-slider-thumb{-webkit-appearance:none;widt
 /* Giroscopio badge */
 .gyro-badge{position:fixed;top:calc(var(--safe-top)+56px);right:14px;z-index:10;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:5px 9px;font-size:10px;color:rgba(255,255,255,0.35);backdrop-filter:blur(8px);}
 .gyro-badge.on{color:#4ade80;border-color:rgba(74,222,128,0.3);}
-.gyro-cal{position:fixed;bottom:calc(var(--safe-bottom)+60px);left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,0.7);border:1px solid rgba(74,222,128,0.4);border-radius:20px;padding:9px 22px;font-size:13px;font-weight:700;color:#4ade80;backdrop-filter:blur(8px);cursor:pointer;letter-spacing:0.04em;}
-.gyro-cal:active{background:rgba(74,222,128,0.2);transform:translateX(-50%) scale(0.96);}
+.gyro-cal{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,0.75);border:1px solid rgba(74,222,128,0.4);border-radius:16px 16px 0 0;padding:10px 28px 14px;font-size:13px;font-weight:700;color:#4ade80;backdrop-filter:blur(8px);cursor:pointer;letter-spacing:0.04em;}
+.gyro-cal:active{background:rgba(74,222,128,0.2);}
 
 /* Flash */
 #flash{position:fixed;inset:0;background:rgba(255,255,255,0.28);pointer-events:none;opacity:0;z-index:15;transition:opacity 0.07s;}
@@ -122,59 +122,41 @@ const sensSliderEl=document.getElementById('sensSlider');
 const sensReadoutEl=document.getElementById('sensReadout');
 sensSliderEl.oninput=()=>{micSens=parseInt(sensSliderEl.value);sensReadoutEl.textContent=micSens;};
 
-// ── Cámara virtual — giroscopio puro (sin brújula) ─────────────
-// Usamos DeviceMotion (velocidad angular) para integrar la rotación
-// real del celular en el espacio, independiente de la brújula magnética.
-// Esto funciona igual con brazos extendidos o muñecas.
+// ── Cámara virtual — giroscopio puro ───────────────────────────
+// camX/camY = desplazamiento acumulado en px desde el centro de referencia.
+// Se actualiza con DeviceMotion (velocidad angular °/s) independiente
+// de la brújula — funciona igual con brazos extendidos o muñecas.
 
 let camX=0, camY=0;
 let gyroActive=false;
-let lastRawAlpha=0,lastRawBeta=0,lastRawGamma=0;
-const DEG_SCALE=14;
+const DEG_SCALE=10; // px por grado
 
-// Integración de velocidad angular
-let integratedYaw=0, integratedPitch=0;
+// Integración
+let intYaw=0, intPitch=0;
 let lastMotionTime=null;
 
 // Suavizado
 let smoothCamX=0, smoothCamY=0;
-const SMOOTH=0.2;
+const SMOOTH=0.25;
 
 function updateCamMotion(rotRate, dt){
-  if(!rotRate||rotRate.alpha===null)return;
-  // rotRate.alpha = yaw (izq/der), rotRate.beta = pitch (arriba/abajo)
-  // en grados/segundo
-  const dyaw   = (rotRate.alpha||0) * dt;
-  const dpitch = (rotRate.beta||0)  * dt;
-
-  integratedYaw   += dyaw;
-  integratedPitch += dpitch;
-
-  const targetX = integratedYaw   * DEG_SCALE;
-  const targetY = integratedPitch * DEG_SCALE;
-
-  smoothCamX += (targetX - smoothCamX) * SMOOTH;
-  smoothCamY += (targetY - smoothCamY) * SMOOTH;
+  if(!rotRate||rotRate.alpha===null||rotRate.alpha===undefined)return;
+  intYaw   += (rotRate.alpha||0) * dt;
+  intPitch += (rotRate.beta ||0) * dt;
+  smoothCamX += (intYaw   * DEG_SCALE - smoothCamX) * SMOOTH;
+  smoothCamY += (intPitch * DEG_SCALE - smoothCamY) * SMOOTH;
   camX = smoothCamX;
   camY = smoothCamY;
 }
 
 function calibrate(){
-  integratedYaw=0; integratedPitch=0;
+  // Resetea la posición de referencia y respawnea targets alrededor
+  intYaw=0; intPitch=0;
   smoothCamX=0; smoothCamY=0; camX=0; camY=0;
-  respawnTargetsAroundCurrent();
-  gyroBadge.textContent='✓ RECENTRADO';
-  setTimeout(()=>gyroBadge.textContent='GYRO ON',1500);
-}
-
-function respawnTargetsAroundCurrent(){
   targets=[];
   for(let i=0;i<MAX_TARGETS;i++) spawnTarget();
-}
-
-// También mantenemos deviceorientation como fallback para toScreen
-function updateCamOrientation(alpha,beta,gamma){
-  lastRawAlpha=alpha;lastRawBeta=beta;lastRawGamma=gamma;
+  gyroBadge.textContent='✓ OK';
+  setTimeout(()=>gyroBadge.textContent='GYRO ON',1200);
 }
 
 function calibrate(){
@@ -260,22 +242,21 @@ function startGyro(){
   gyroActive=true;
   gyroBadge.textContent='GYRO ON';gyroBadge.className='gyro-badge on';
 
-  // DeviceMotion da velocidad angular real en °/s — independiente de brújula
   window.addEventListener('devicemotion', e=>{
     const now=performance.now();
     if(lastMotionTime===null){lastMotionTime=now;return;}
-    const dt=(now-lastMotionTime)/1000; // segundos
+    const dt=(now-lastMotionTime)/1000;
     lastMotionTime=now;
-    if(dt>0.1)return; // ignorar gaps grandes
-
+    if(dt<=0||dt>0.1)return;
     updateCamMotion(e.rotationRate, dt);
     const rr=e.rotationRate;
-    if(rr) gyroBadge.textContent=`y${Math.round(rr.alpha||0)} p${Math.round(rr.beta||0)}`;
+    if(rr) gyroBadge.textContent=`y${Math.round(intYaw)} p${Math.round(intPitch)}`;
   },{passive:true});
 
-  // deviceorientation como referencia adicional
   window.addEventListener('deviceorientation',e=>{
-    if(e.alpha!==null) updateCamOrientation(e.alpha||0,e.beta||0,e.gamma||0);
+    if(e.alpha!==null&&e.alpha!==undefined){
+      lastRawAlpha=e.alpha||0;lastRawBeta=e.beta||0;lastRawGamma=e.gamma||0;
+    }
   },{passive:true});
 }
 
@@ -309,16 +290,14 @@ window.addEventListener('resize',resize);resize();
 
 // ── Spawn target en el mundo virtual ───────────────────────────
 function randomTarget(){
-  const margin=100,type=TARGET_TYPES[Math.floor(Math.random()*TARGET_TYPES.length)];
+  const type=TARGET_TYPES[Math.floor(Math.random()*TARGET_TYPES.length)];
   const size=type==='silhouette'?58+Math.random()*28:type==='balloon'?36+Math.random()*22:type==='can'?28+Math.random()*18:42+Math.random()*26;
-  // worldX/Y en la misma unidad que camX/camY (grados * DEG_SCALE = px)
-  // Distribuimos targets ±25 grados alrededor de la orientación actual
-  const spreadDeg=25;
+  // Distribuir alrededor del camX/camY actual en un spread de ±300px
+  const spread=300;
   return{
     type,
-    // Posición en px-mundo basada en orientación actual del celular
-    worldX: camX + (Math.random()-0.5)*spreadDeg*DEG_SCALE*2,
-    worldY: camY + (Math.random()-0.5)*20*DEG_SCALE,
+    worldX: camX + (Math.random()-0.5)*spread*2,
+    worldY: camY - 80 + Math.random()*200,
     size,born:Date.now(),
     bobOffset:Math.random()*Math.PI*2,
     bobSpeed:0.35+Math.random()*0.5,
@@ -706,6 +685,19 @@ function checkMic(){
 // ── Loop ────────────────────────────────────────────────────────
 function loop(){
   ctx.clearRect(0,0,W,H);
+
+  // Auto-respawn: si un target quedó muy lejos, reubicarlo cerca
+  targets.forEach(t=>{
+    if(t.dying)return;
+    const {sx,sy}=toScreen(t.worldX,t.worldY);
+    const offscreen=sx<-W||sx>W*2||sy<-H||sy>H*2;
+    if(offscreen){
+      t.worldX=camX+(Math.random()-0.5)*400;
+      t.worldY=camY-80+Math.random()*200;
+      t.born=Date.now();t.opacity=0;
+    }
+  });
+
   drawBulletHoles();
   targets.forEach(drawTarget);
   updateBullets();
