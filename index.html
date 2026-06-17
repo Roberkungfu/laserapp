@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///Users/robertorojas/Downloads/index_9.html -->
+<!-- saved from url=(0050)file:///Users/robertorojas/Downloads/index_10.html -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -122,59 +122,46 @@ const sensSliderEl=document.getElementById('sensSlider');
 const sensReadoutEl=document.getElementById('sensReadout');
 sensSliderEl.oninput=()=>{micSens=parseInt(sensSliderEl.value);sensReadoutEl.textContent=micSens;};
 
-// ── Cámara virtual con orientación absoluta ─────────────────────
-// Usamos alpha (brújula 0-360) para el eje horizontal
-// y beta (inclinación -180/180) para el eje vertical.
-// Los targets tienen coordenadas en "grados de mundo" y los
-// proyectamos a pantalla según hacia dónde apunta el celular.
+// ── Cámara virtual — giroscopio puro (sin brújula) ─────────────
+// Usamos DeviceMotion (velocidad angular) para integrar la rotación
+// real del celular en el espacio, independiente de la brújula magnética.
+// Esto funciona igual con brazos extendidos o muñecas.
 
-let camAlpha=0, camBeta=0;       // orientación actual del celular (grados)
-let gyroReady=false;
-let lastRawAlpha=0,lastRawGamma=0,lastRawBeta=0;
-
-// Suavizado
-let smoothAlpha=0,smoothBeta=0;
-const SMOOTH=0.18;
-
-// Escala: cuántos px por grado
+let camX=0, camY=0;
+let gyroActive=false;
+let lastRawAlpha=0,lastRawBeta=0,lastRawGamma=0;
 const DEG_SCALE=14;
 
-// camX/camY en px — lo que usamos en toScreen
-let camX=0,camY=0;
-let gyroActive=false;
+// Integración de velocidad angular
+let integratedYaw=0, integratedPitch=0;
+let lastMotionTime=null;
 
-function updateCam(alpha,beta,gamma){
-  lastRawAlpha=alpha;lastRawBeta=beta;lastRawGamma=gamma;
+// Suavizado
+let smoothCamX=0, smoothCamY=0;
+const SMOOTH=0.2;
 
-  // Normalizar alpha 0-360
-  let a=alpha%360; if(a<0)a+=360;
-  // Beta: inclinación vertical — usamos gamma para landscape, beta para portrait
-  // En portrait (como apuntar una pistola) gamma es el eje H, beta el eje V
-  let b=beta;
+function updateCamMotion(rotRate, dt){
+  if(!rotRate||rotRate.alpha===null)return;
+  // rotRate.alpha = yaw (izq/der), rotRate.beta = pitch (arriba/abajo)
+  // en grados/segundo
+  const dyaw   = (rotRate.alpha||0) * dt;
+  const dpitch = (rotRate.beta||0)  * dt;
 
-  // Suavizado
-  // Manejar wrap-around del alpha (359→0)
-  let da=a-smoothAlpha;
-  if(da>180)da-=360;if(da<-180)da+=360;
-  smoothAlpha+=da*SMOOTH;
-  smoothAlpha=(smoothAlpha+360)%360;
+  integratedYaw   += dyaw;
+  integratedPitch += dpitch;
 
-  smoothBeta+=(b-smoothBeta)*SMOOTH;
+  const targetX = integratedYaw   * DEG_SCALE;
+  const targetY = integratedPitch * DEG_SCALE;
 
-  camAlpha=smoothAlpha;
-  camBeta=smoothBeta;
-
-  // Convertir a px para toScreen
-  // alpha crece hacia la derecha (brújula), así que camX = alpha * escala
-  camX=camAlpha*DEG_SCALE;
-  camY=camBeta*DEG_SCALE;
-
-  gyroReady=true;
+  smoothCamX += (targetX - smoothCamX) * SMOOTH;
+  smoothCamY += (targetY - smoothCamY) * SMOOTH;
+  camX = smoothCamX;
+  camY = smoothCamY;
 }
 
 function calibrate(){
-  // No hay nada que calibrar con orientación absoluta —
-  // simplemente reposicionamos los targets alrededor de la orientación actual
+  integratedYaw=0; integratedPitch=0;
+  smoothCamX=0; smoothCamY=0; camX=0; camY=0;
   respawnTargetsAroundCurrent();
   gyroBadge.textContent='✓ RECENTRADO';
   setTimeout(()=>gyroBadge.textContent='GYRO ON',1500);
@@ -183,6 +170,11 @@ function calibrate(){
 function respawnTargetsAroundCurrent(){
   targets=[];
   for(let i=0;i<MAX_TARGETS;i++) spawnTarget();
+}
+
+// También mantenemos deviceorientation como fallback para toScreen
+function updateCamOrientation(alpha,beta,gamma){
+  lastRawAlpha=alpha;lastRawBeta=beta;lastRawGamma=gamma;
 }
 
 function calibrate(){
@@ -200,9 +192,9 @@ const btnCal=document.getElementById('btnCalibrate');
 btnCal.onclick=()=>{
   if(!gyroActive){
     // Intentar activar giroscopio desde gesto directo del usuario
-    if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    if(typeof DeviceMotionEvent.requestPermission==='function'){
       // iOS: pedir permiso explícito
-      DeviceOrientationEvent.requestPermission().then(r=>{
+      DeviceMotionEvent.requestPermission().then(r=>{
         if(r==='granted'){
           startGyro();
           btnCal.textContent='⊕ Calibrar';
@@ -227,16 +219,16 @@ btnCal.onclick=()=>{
 };
 
 function initGyro(){
-  if(!window.DeviceOrientationEvent){
+  if(!window.DeviceMotionEvent){
     gyroBadge.textContent='TOUCH';initTouchCam();return;
   }
 
-  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
     // iOS: NO pedir permiso aquí (falla si no es gesto directo)
     // El botón "Activar giroscopio" lo pedirá cuando el usuario lo toque
     gyroBadge.textContent='↓ Activa gyro';
     // Intentar igual por si el permiso ya fue concedido antes
-    DeviceOrientationEvent.requestPermission().then(r=>{
+    DeviceMotionEvent.requestPermission().then(r=>{
       if(r==='granted') startGyro();
     }).catch(()=>{});
   } else {
@@ -248,16 +240,16 @@ function initGyro(){
 function tryGyro(){
   let gotEvent=false;
   const test=e=>{
-    if(e.gamma!==null&&e.gamma!==undefined){
+    if(e.rotationRate&&e.rotationRate.alpha!==null){
       gotEvent=true;
-      window.removeEventListener('deviceorientation',test);
+      window.removeEventListener('devicemotion',test);
       startGyro();
     }
   };
-  window.addEventListener('deviceorientation',test);
+  window.addEventListener('devicemotion',test);
   setTimeout(()=>{
     if(!gotEvent){
-      window.removeEventListener('deviceorientation',test);
+      window.removeEventListener('devicemotion',test);
       gyroBadge.textContent='TOUCH';
       initTouchCam();
     }
@@ -267,10 +259,23 @@ function tryGyro(){
 function startGyro(){
   gyroActive=true;
   gyroBadge.textContent='GYRO ON';gyroBadge.className='gyro-badge on';
+
+  // DeviceMotion da velocidad angular real en °/s — independiente de brújula
+  window.addEventListener('devicemotion', e=>{
+    const now=performance.now();
+    if(lastMotionTime===null){lastMotionTime=now;return;}
+    const dt=(now-lastMotionTime)/1000; // segundos
+    lastMotionTime=now;
+    if(dt>0.1)return; // ignorar gaps grandes
+
+    updateCamMotion(e.rotationRate, dt);
+    const rr=e.rotationRate;
+    if(rr) gyroBadge.textContent=`y${Math.round(rr.alpha||0)} p${Math.round(rr.beta||0)}`;
+  },{passive:true});
+
+  // deviceorientation como referencia adicional
   window.addEventListener('deviceorientation',e=>{
-    if(e.alpha===null||e.alpha===undefined)return;
-    updateCam(e.alpha||0, e.beta||0, e.gamma||0);
-    gyroBadge.textContent=`α${Math.round(e.alpha)} β${Math.round(e.beta||0)}`;
+    if(e.alpha!==null) updateCamOrientation(e.alpha||0,e.beta||0,e.gamma||0);
   },{passive:true});
 }
 
