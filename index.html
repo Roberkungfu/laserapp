@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///Users/robertorojas/Downloads/index_2.html -->
+<!-- saved from url=(0049)file:///Users/robertorojas/Downloads/index_3.html -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -85,7 +85,7 @@ input[type=range].sens-slider::-webkit-slider-thumb{-webkit-appearance:none;widt
 
 <!-- Gyro badge -->
 <div class="gyro-badge" id="gyroBadge">GYRO OFF</div>
-<button class="gyro-cal" id="btnCalibrate">⊕ Calibrar</button>
+<button class="gyro-cal" id="btnCalibrate">⊕ Activar giroscopio</button>
 
 <!-- Start screen -->
 <div id="startScreen">
@@ -155,39 +155,75 @@ function calibrate(){
 }
 
 const btnCal=document.getElementById('btnCalibrate');
-if(btnCal)btnCal.onclick=calibrate;
+
+// El botón hace dos cosas según el estado:
+// 1. Si gyro no activo → intenta activarlo (pide permiso en iOS)
+// 2. Si gyro activo → calibra (resetea posición base)
+btnCal.onclick=()=>{
+  if(!gyroActive){
+    // Intentar activar giroscopio desde gesto directo del usuario
+    if(typeof DeviceOrientationEvent.requestPermission==='function'){
+      // iOS: pedir permiso explícito
+      DeviceOrientationEvent.requestPermission().then(r=>{
+        if(r==='granted'){
+          startGyro();
+          btnCal.textContent='⊕ Calibrar';
+        } else {
+          gyroBadge.textContent='TOUCH';
+          initTouchCam();
+          btnCal.textContent='⊕ Calibrar';
+        }
+      }).catch(()=>{
+        gyroBadge.textContent='TOUCH';
+        initTouchCam();
+        btnCal.textContent='⊕ Calibrar';
+      });
+    } else {
+      // Android: ya debería estar activo, calibrar
+      calibrate();
+      btnCal.textContent='⊕ Calibrar';
+    }
+  } else {
+    calibrate();
+  }
+};
 
 function initGyro(){
   if(!window.DeviceOrientationEvent){
     gyroBadge.textContent='TOUCH';initTouchCam();return;
   }
-  const tryGyro=()=>{
-    let gotEvent=false;
-    const test=e=>{
-      // Verificar que lleguen datos reales (gamma es el eje más confiable)
-      if(e.gamma!==null&&e.gamma!==undefined){
-        gotEvent=true;
-        window.removeEventListener('deviceorientation',test);
-        startGyro();
-      }
-    };
-    window.addEventListener('deviceorientation',test);
-    setTimeout(()=>{
-      if(!gotEvent){
-        window.removeEventListener('deviceorientation',test);
-        gyroBadge.textContent='TOUCH';
-        initTouchCam();
-      }
-    },2000);
-  };
 
   if(typeof DeviceOrientationEvent.requestPermission==='function'){
-    DeviceOrientationEvent.requestPermission()
-      .then(r=>{ if(r==='granted')tryGyro(); else{gyroBadge.textContent='TOUCH';initTouchCam();} })
-      .catch(()=>{gyroBadge.textContent='TOUCH';initTouchCam();});
+    // iOS: NO pedir permiso aquí (falla si no es gesto directo)
+    // El botón "Activar giroscopio" lo pedirá cuando el usuario lo toque
+    gyroBadge.textContent='↓ Activa gyro';
+    // Intentar igual por si el permiso ya fue concedido antes
+    DeviceOrientationEvent.requestPermission().then(r=>{
+      if(r==='granted') startGyro();
+    }).catch(()=>{});
   } else {
+    // Android: intentar directo
     tryGyro();
   }
+}
+
+function tryGyro(){
+  let gotEvent=false;
+  const test=e=>{
+    if(e.gamma!==null&&e.gamma!==undefined){
+      gotEvent=true;
+      window.removeEventListener('deviceorientation',test);
+      startGyro();
+    }
+  };
+  window.addEventListener('deviceorientation',test);
+  setTimeout(()=>{
+    if(!gotEvent){
+      window.removeEventListener('deviceorientation',test);
+      gyroBadge.textContent='TOUCH';
+      initTouchCam();
+    }
+  },2000);
 }
 
 function startGyro(){
