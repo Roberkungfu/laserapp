@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///Users/robertorojas/Downloads/index_7.html -->
+<!-- saved from url=(0049)file:///Users/robertorojas/Downloads/index_8.html -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -35,10 +35,10 @@ input[type=range].sens-slider::-webkit-slider-thumb{-webkit-appearance:none;widt
 #sensReadout{font-size:11px;color:rgba(255,255,255,0.45);min-width:24px;}
 
 /* Giroscopio badge */
-.gyro-badge{position:fixed;bottom:calc(var(--safe-bottom)+44px);right:14px;z-index:10;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:5px 9px;font-size:10px;color:rgba(255,255,255,0.35);backdrop-filter:blur(8px);}
+.gyro-badge{position:fixed;top:calc(var(--safe-top)+56px);right:14px;z-index:10;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:5px 9px;font-size:10px;color:rgba(255,255,255,0.35);backdrop-filter:blur(8px);}
 .gyro-badge.on{color:#4ade80;border-color:rgba(74,222,128,0.3);}
-.gyro-cal{position:fixed;bottom:calc(var(--safe-bottom)+10px);right:14px;z-index:10;background:rgba(0,0,0,0.6);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;color:#4ade80;backdrop-filter:blur(8px);cursor:pointer;}
-.gyro-cal:active{background:rgba(74,222,128,0.2);}
+.gyro-cal{position:fixed;bottom:calc(var(--safe-bottom)+60px);left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,0.7);border:1px solid rgba(74,222,128,0.4);border-radius:20px;padding:9px 22px;font-size:13px;font-weight:700;color:#4ade80;backdrop-filter:blur(8px);cursor:pointer;letter-spacing:0.04em;}
+.gyro-cal:active{background:rgba(74,222,128,0.2);transform:translateX(-50%) scale(0.96);}
 
 /* Flash */
 #flash{position:fixed;inset:0;background:rgba(255,255,255,0.28);pointer-events:none;opacity:0;z-index:15;transition:opacity 0.07s;}
@@ -64,7 +64,7 @@ input[type=range].sens-slider::-webkit-slider-thumb{-webkit-appearance:none;widt
 
 <!-- Logo esquina -->
 <div class="zata-corner">
-  <img id="logoHud" src="file:///Users/robertorojas/Downloads/index_7.html" alt="ZATA">
+  <img id="logoHud" src="file:///Users/robertorojas/Downloads/index_8.html" alt="ZATA">
   
 </div>
 
@@ -79,8 +79,8 @@ input[type=range].sens-slider::-webkit-slider-thumb{-webkit-appearance:none;widt
 
 <div class="sens-wrap">
   <span class="sens-label">Sensibilidad mic</span>
-  <input type="range" class="sens-slider" id="sensSlider" min="10" max="90" value="50" step="1">
-  <span id="sensReadout">50</span>
+  <input type="range" class="sens-slider" id="sensSlider" min="10" max="99" value="75" step="1">
+  <span id="sensReadout">75</span>
 </div>
 
 <!-- Gyro badge -->
@@ -90,7 +90,7 @@ input[type=range].sens-slider::-webkit-slider-thumb{-webkit-appearance:none;widt
 <!-- Start screen -->
 <div id="startScreen">
   <div class="start-logo">
-    <img id="logoStart" src="file:///Users/robertorojas/Downloads/index_7.html" alt="ZATA">
+    <img id="logoStart" src="file:///Users/robertorojas/Downloads/index_8.html" alt="ZATA">
     <span class="start-brand">ZATA</span>
   </div>
   <div class="start-title">AR SHOOTER</div>
@@ -117,7 +117,7 @@ const SHOT_COOLDOWN=650, MAX_TARGETS=5;
 const TARGET_TYPES=['bullseye','can','balloon','silhouette'];
 
 // ── Sensibilidad mic con botones ────────────────────────────────
-let micSens=50;
+let micSens=75;
 const sensSliderEl=document.getElementById('sensSlider');
 const sensReadoutEl=document.getElementById('sensReadout');
 sensSliderEl.oninput=()=>{micSens=parseInt(sensSliderEl.value);sensReadoutEl.textContent=micSens;};
@@ -338,7 +338,7 @@ function spawnTarget(){targets.push(randomTarget());}
 // La mira está en el centro. Si el target está a la derecha de donde apunta
 // el celular, aparece a la derecha en pantalla.
 function toScreen(wx,wy){
-  return{sx:W/2+(wx-camX), sy:H/2+(wy-camY)};
+  return{sx:W/2-(wx-camX), sy:H/2-(wy-camY)};
 }
 
 // ── Helpers color ───────────────────────────────────────────────
@@ -702,7 +702,8 @@ function checkMic(){
   const avg=micData.reduce((a,b)=>a+b,0)/micData.length;
   const peak=Math.max(...micData);
   // mic bar removed
-  const threshold=230-(micSens*1.44);
+  // sens 10→99: umbral 240→10 (más sens = más fácil de activar)
+  const threshold=250-(micSens*2.5);
   if(peak>threshold)shoot();
 }
 
