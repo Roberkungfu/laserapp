@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0050)file:///Users/robertorojas/Downloads/index_22.html -->
+<!-- saved from url=(0050)file:///Users/robertorojas/Downloads/index_23.html -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -118,7 +118,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;
 </div>
 
 <div id="gyroBadge">GYRO OFF</div>
-<div id="verBadge">build v2305</div>
+<div id="verBadge">build v2309</div>
 
 <div id="micWrap">
   <span>Mic</span>
@@ -189,12 +189,27 @@ function onMotion(e){
   lastT = now;
   if(dt<=0||dt>0.15) return;
 
-  // En orientación "pistola" (celular vertical, pantalla hacia el usuario):
-  // gamma = inclinar muñeca izq/der → giro horizontal real
-  // beta  = inclinar muñeca arriba/abajo → giro vertical real
-  // alpha mezcla ambos por la brújula interna → causa el efecto diagonal
-  let yawRate   = -(rr.gamma||0);
-  let pitchRate = rr.beta||0;
+  // Detectar orientación física del dispositivo.
+  // En landscape los ejes gamma/beta físicos se intercambian respecto a portrait.
+  const ang = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+  const isLandscape = Math.abs(ang) === 90;
+
+  let yawRate, pitchRate;
+  if(isLandscape){
+    // landscape-primary (90°): gamma pasa a ser vertical, beta horizontal
+    // landscape-secondary (-90°/270°): se invierte además el sentido
+    if(ang === 90 || ang === -270){
+      yawRate   = rr.beta||0;
+      pitchRate = rr.gamma||0;
+    } else { // -90 o 270
+      yawRate   = -(rr.beta||0);
+      pitchRate = -(rr.gamma||0);
+    }
+  } else {
+    // portrait
+    yawRate   = -(rr.gamma||0);
+    pitchRate = rr.beta||0;
+  }
 
   // Deadzone: ignorar ruido pequeño que causa drift/acoplamiento
   const DEADZONE = 3; // °/s
@@ -206,7 +221,7 @@ function onMotion(e){
   smoothX += (intYaw  *SCALE_X - smoothX)*SMOOTH;
   smoothY += (intPitch*SCALE_Y - smoothY)*SMOOTH;
   camX=smoothX; camY=smoothY;
-  badge.textContent=`β${Math.round(rr.beta||0)} camY${Math.round(camY)}`;
+  badge.textContent=`∠${ang} β${Math.round(rr.beta||0)} γ${Math.round(rr.gamma||0)}`;
 }
 
 function toScreen(wx,wy){
